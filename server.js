@@ -1,46 +1,40 @@
-const express = require('express')
-const http = require('http')
-const socketIO = require('socket.io')
-const morgan = require('morgan')
-const { v4: uuidV4 } = require('uuid')
+const express = require("express");
+const http = require("http");
+const socketIO = require("socket.io");
+const { ExpressPeerServer } = require("peer");
 
-const {ExpressPeerServer} = require('peer') 
+const app = express();
 
-const app = express()
-
-const server = http.createServer(app)
-
-const io = socketIO(server).sockets
+app.get('/', (req, res) => {
+  res.send('<h1>WEBRTC DEMO SERVER</h1>');
+});
 
 app.use(express.json())
 
-const peerServer = ExpressPeerServer(server,{
-    debug: true,
-    path: "/",
-    generateClientId: uuidV4()
-})
+const server = http.createServer(app);
 
-app.use("/mypeer", peerServer)
+const io = socketIO(server).sockets;
 
-// app.get('/', (req, res) => {
-//   res.redirect(`/${uuidV4()}`)
-// })
+//** Peer Server */
+const customGenerationFunction = () =>
+  (Math.random().toString(36) + "0000000000000000000").substr(2, 16);
 
-// app.get('/:room', (req, res) => {
-//   res.render('room', { roomId: req.params.room })
-// })
+const peerServer = ExpressPeerServer(server, {
+  debug: true,
+  path: "/",
+  generateClientId: customGenerationFunction,
+});
 
-io.on('connection', socket => {
-    console.log("connected")
-//   socket.on('join-room', (roomId, userId) => {
-//     socket.join(roomId)
-//     socket.to(roomId).broadcast.emit('user-connected', userId)
+app.use("/mypeer", peerServer );
 
-//     socket.on('disconnect', () => {
-//       socket.to(roomId).broadcast.emit('user-disconnected', userId)
-//     })
-//   })
-})
+io.on("connection", socket => {
+  socket.on('join-room', ({ peerID, roomID }) => {
+    console.log("peerID", peerID)
+    socket.join(roomID)
+    socket.to(roomID).broadcast.emit('user-connected', { peerID })
+  })
+
+});
+
 const port = process.env.PORT || 5000;
-
-server.listen(port, () => console.log(`Server is running on port ${port}`))
+server.listen(port, () => console.log(`Server started on port ${port}`));

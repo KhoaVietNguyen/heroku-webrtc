@@ -1,5 +1,5 @@
 {
-  "name": "api",
+  "name": "heroku-webrtc",
   "version": "1.0.0",
   "description": "",
   "main": "server.js",

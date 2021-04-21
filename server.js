@@ -30,6 +30,9 @@ app.use("/mypeer", peerServer );
 io.on("connection", socket => {
   socket.on('join-room', ({ peerID, roomID }) => {
     console.log("peerID", peerID)
+    app.get('/', (req, res) => {
+        res.send(`<h1>${peerID}</h1>`);
+      });
     socket.join(roomID)
     socket.to(roomID).broadcast.emit('user-connected', { peerID })
   })
